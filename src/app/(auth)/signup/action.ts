@@ -8,46 +8,61 @@ import { randomUUID } from "crypto";
 import { redirect } from "next/navigation";
 
 // Form fields
-type fields = {
-  name: FormDataEntryValue | null,
-  username: FormDataEntryValue | null,
-  email: FormDataEntryValue | null,
-  password: FormDataEntryValue | null
+interface fields {
+  name: string | null;
+  username: string | null;
+  email: string | null;
+  password: string | null;
 }
 
 // Check if field exist on DB ------> true = NOT exist  -----  false = exist
-export async function fieldChecker(type: string, value: string | undefined) {
+export async function DBfieldChecker(type: string, value: string | null) {
   // Check if email exist
-  if(type === 'email' && await executeQuery(`SELECT id FROM users WHERE email = '${value}'`, null) == null) {
-    return true
+  if (
+    type === "email" &&
+    (await executeQuery(
+      `SELECT id FROM users WHERE email = '${value}'`,
+      null
+    )) == null
+  ) {
+    return true;
   }
   // Check if username exist
-  if(type === 'username' && await executeQuery(`SELECT id FROM users WHERE username = '${value}'`, null) == null) {
-    return true
+  if (
+    type === "username" &&
+    (await executeQuery(
+      `SELECT id FROM users WHERE username = '${value}'`,
+      null
+    )) == null
+  ) {
+    return true;
   }
 
-  return false
+  return false;
 }
 
-async function signupFormCHecker(data: fields) {
+export async function signupFieldsChecker(data: fields) {
   // Validate form
-  let validatedFields = await SignupFormSchema.safeParse(data)
+  let validatedFields = await SignupFormSchema.safeParse(data);
 
   // Check if user or email already exist
-  if(validatedFields.success) {
+  if (validatedFields.success && data.email != null && data.username != null) {
     // Check data on DB
-    const emailCheck = await fieldChecker('email', data.email?.toString())
-    const usernameCheck = await fieldChecker('username', data.username?.toString())
+    const emailCheck = await DBfieldChecker("email", data.email.toString());
+    const usernameCheck = await DBfieldChecker(
+      "username",
+      data.username.toString()
+    );
 
-    // 
-    if(emailCheck && usernameCheck) {
-      return validatedFields
+    //
+    if (emailCheck && usernameCheck) {
+      return validatedFields;
     }
   }
 
   validatedFields.success = false;
   // Return form status
-  return validatedFields
+  return validatedFields;
 }
 
 export async function signup(state: FormState, formData: FormData) {
@@ -72,18 +87,14 @@ export async function signup(state: FormState, formData: FormData) {
   // 2. Prepare data for insertion into database
   const { name, username, email, password } = validatedFields.data;
   // Hash and salt the user's password before storing it
-  const {salt, hashedPassword} = await saltAndHash(password);
+  const { salt, hashedPassword } = await saltAndHash(password);
 
   // 3. Insert the user into the database
-  if(await executeQuery(
-    `INSERT INTO users (user_id, name, username, email, password) VALUES ('${id}', '${username}', '${name}', '${email}', '${hashedPassword}')`,
-    null,
-  ) !== null) {
+  if (await executeQuery(
+      `INSERT INTO users (user_id, name, username, email, password) VALUES ('${id}', '${name}', '${username}', '${email}', '${hashedPassword}')`, null) !== null
+  ) {
     // Save salt on DB
-    if(await executeQuery(
-      `UPDATE password SET salt = '${salt}' WHERE user_id = '${id}'`,
-      null,
-    ) !== null) {
+    if (await executeQuery(`UPDATE password SET salt = '${salt}' WHERE user_id = '${id}'`, null) !== null) {
       // 4. Create user session
       await createSession(id);
       // 5. Redirect user to the profile page
@@ -91,8 +102,7 @@ export async function signup(state: FormState, formData: FormData) {
     }
   }
 
-
   return {
-    message: "Error during sign in"
-  }
+    message: "Error during sign in",
+  };
 }

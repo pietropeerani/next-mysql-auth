@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { signup } from "./action";
 import { useFormState } from "react-dom";
 
@@ -119,7 +118,12 @@ export default function SignupPage() {
               {pending ? "Submitting..." : "Sign up"}
             </button>
 
-            <Link href={"/login"} className="px-4 py-2 rounded-md block mt-4 text-white text-opacity-60 hover:underline hover:text-opacity-100 transition-all">Login</Link>
+            <Link
+              href={"/login"}
+              className="px-4 py-2 rounded-md block mt-4 text-white text-opacity-60 hover:underline hover:text-opacity-100 transition-all"
+            >
+              Login
+            </Link>
           </div>
         </form>
 
